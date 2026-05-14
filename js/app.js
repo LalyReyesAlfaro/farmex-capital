@@ -108,6 +108,7 @@ const rendered = new Set();
 function goScreen(id) {
   if (!SCREENS[id]) return;
   if (id !== 'login') setSidebarVisibility(true);
+  document.body.classList.toggle('auth-mode', id === 'login');
   if (!rendered.has(id)) {
     document.getElementById('screen-' + id).innerHTML = SCREENS[id].html;
     rendered.add(id);
