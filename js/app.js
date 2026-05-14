@@ -14,20 +14,43 @@ const SB_URL = 'https://zvleepucmfpkedyxyeol.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2bGVlcHVjbWZwa2VkeXh5ZW9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NTk1OTgsImV4cCI6MjA5NDMzNTU5OH0.1rfSk1_qGlj6Bn9Ty86eFvDzt8O90nYM40r1lhEwiAg';
 const _sb    = window.supabase.createClient(SB_URL, SB_KEY);
 
+// Usuarios demo (mientras se configura el proveedor de email real)
+const DEMO_USERS = {
+  'raul@farmex.pe':  { password: 'Farmex2026!', nombre: 'Raúl García Mendoza',   region: 'La Libertad', ha: 32, cultivo: 'Palta Hass' },
+  'julia@farmex.pe': { password: 'Farmex2026!', nombre: 'Julia Ramos Valdez',    region: 'Ica',         ha: 18, cultivo: 'Arándano'   },
+};
+
 window.fbAuth = {
-  async register(email, password, meta = {}) {
-    const { data, error } = await _sb.auth.signUp({ email, password, options: { data: meta } });
-    if (error) return { error: error.message };
-    return { user: data.user, access_token: data.session?.access_token };
-  },
   async login(email, password) {
-    const { data, error } = await _sb.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    return { user: data.user, access_token: data.session?.access_token };
+    // Primero intenta Supabase real
+    try {
+      const { data, error } = await _sb.auth.signInWithPassword({ email, password });
+      if (!error && data.session) {
+        localStorage.setItem('fx_demo', JSON.stringify({ email, ...DEMO_USERS[email] }));
+        return { user: data.user, access_token: data.session.access_token };
+      }
+    } catch(e) { /* fallback a demo */ }
+    // Fallback demo local
+    const u = DEMO_USERS[email];
+    if (u && u.password === password) {
+      localStorage.setItem('fx_demo', JSON.stringify({ email, ...u }));
+      return { user: { email, id: 'demo' }, access_token: 'demo_token' };
+    }
+    return { error: 'Email o contraseña incorrectos.' };
   },
-  logout()     { _sb.auth.signOut(); window.location.reload(); },
-  getUser()    { return _sb.auth.getUser ? null : null; },
-  isLoggedIn() { return !!localStorage.getItem('sb-zvleepucmfpkedyxyeol-auth-token'); },
+  async register(email, password, meta = {}) {
+    try {
+      const { data, error } = await _sb.auth.signUp({ email, password, options: { data: meta } });
+      if (!error) return { user: data.user, access_token: data.session?.access_token };
+    } catch(e) {}
+    // Demo fallback
+    DEMO_USERS[email] = { password, nombre: meta.nombre || email, region: meta.region || '', ha: 0, cultivo: '' };
+    localStorage.setItem('fx_demo', JSON.stringify({ email, ...DEMO_USERS[email] }));
+    return { user: { email, id: 'demo' }, access_token: 'demo_token' };
+  },
+  logout()     { localStorage.removeItem('fx_demo'); window.location.reload(); },
+  isLoggedIn() { return !!localStorage.getItem('fx_demo') || !!localStorage.getItem('sb-zvleepucmfpkedyxyeol-auth-token'); },
+  getUser()    { try { return JSON.parse(localStorage.getItem('fx_demo')); } catch { return null; } },
 };
 
 window.fbDb = {
