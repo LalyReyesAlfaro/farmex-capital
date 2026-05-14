@@ -100,7 +100,7 @@ export function init() {
       if (rows?.length) window._productor = rows[0];
       window.goScreen('dashboard');
     } else {
-      showErr(err, data.error_description || 'Credenciales incorrectas.');
+      showErr(err, data.error || data.error_description || data.msg || 'Credenciales incorrectas.');
       btn.textContent = 'Ingresar al portal →'; btn.disabled = false;
     }
   };
