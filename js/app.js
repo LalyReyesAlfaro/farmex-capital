@@ -77,7 +77,7 @@ function setSidebarVisibility(visible) {
 /* Boot — check auth, show login or dashboard */
 mountScreens();
 
-import('../lib/supabase.js').then(({ auth }) => {
+import('./lib/supabase.js').then(({ auth }) => {
   if (auth.isLoggedIn()) {
     setSidebarVisibility(true);
     goScreen('dashboard');
