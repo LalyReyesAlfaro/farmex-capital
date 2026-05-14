@@ -95,9 +95,11 @@ export function init() {
 
     const data = await window.fbAuth.login(email, pass);
     if (data.access_token) {
-      // Load producer profile
-      const rows = await window.fbDb.query('productores', { filters: [`user_id=eq.${data.user.id}`] }).catch(() => []);
-      if (rows?.length) window._productor = rows[0];
+      // Cargar perfil solo para usuarios reales (no demo)
+      if (data.user.id !== 'demo') {
+        const rows = await window.fbDb.query('productores', { filters: [`user_id=eq.${data.user.id}`] }).catch(() => []);
+        if (rows?.length) window._productor = rows[0];
+      }
       window.goScreen('dashboard');
     } else {
       showErr(err, data.error || data.error_description || data.msg || 'Credenciales incorrectas.');
